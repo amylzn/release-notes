@@ -28,6 +28,7 @@ jobs:
         id: check_checkbox
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
+          echo "DEBUG: PR Body content: $PR_BODY"
           if [[ "$PR_BODY" =~ "- [x] Add to release notes" ]]; then
             echo "add_to_release_notes=true" >> $GITHUB_OUTPUT # Set output using GITHUB_OUTPUT
           else
