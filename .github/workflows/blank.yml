@@ -82,11 +82,25 @@ jobs:
             git push origin main
 
       - name: Delete temporary branch
-        if: success() && steps.check_checkbox.outputs.add_to_release_notes == 'true' # Only delete if previous steps succeeded
+        if: always() && steps.check_checkbox.outputs.add_to_release_notes == 'true' # Always attempt to delete, even if merge failed
         run: |
           TEMP_BRANCH="release-notes-update-${{ github.run_id }}"
-          git push origin --delete "$TEMP_BRANCH" # Delete remote branch
-          git branch -d "$TEMP_BRANCH" # Delete local branch
+      
+          # Check if the remote branch exists
+          if git ls-remote --heads origin "$TEMP_BRANCH" | grep -q "$TEMP_BRANCH"; then
+            echo "Remote branch '$TEMP_BRANCH' exists. Deleting..."
+            git push origin --delete "$TEMP_BRANCH" # Delete remote branch
+          else
+            echo "Remote branch '$TEMP_BRANCH' does not exist. Skipping deletion."
+          fi
+      
+          # Check if the local branch exists
+          if git branch --list "$TEMP_BRANCH" | grep -q "$TEMP_BRANCH"; then
+            echo "Local branch '$TEMP_BRANCH' exists. Deleting..."
+            git branch -D "$TEMP_BRANCH" # Delete local branch (force delete in case merge failed)
+          else
+            echo "Local branch '$TEMP_BRANCH' does not exist. Skipping deletion."
+          fi
 
       - name: Log "Not adding to release notes"
         if: steps.check_checkbox.outputs.add_to_release_notes == 'false'
