@@ -77,12 +77,14 @@ jobs:
         if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
         run: |
             git checkout main
+            TEMP_BRANCH="release-notes-update-${{ github.run_id }}"
             git merge "$TEMP_BRANCH"
             git push origin main
 
       - name: Delete temporary branch
         if: success() && steps.check_checkbox.outputs.add_to_release_notes == 'true' # Only delete if previous steps succeeded
         run: |
+          TEMP_BRANCH="release-notes-update-${{ github.run_id }}"
           git push origin --delete "$TEMP_BRANCH" # Delete remote branch
           git branch -d "$TEMP_BRANCH" # Delete local branch
 
