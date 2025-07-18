@@ -55,23 +55,21 @@ jobs:
           echo "$PR_BODY" >> release_notes.md
           echo "" >> release_notes.md # Add an empty line after the PR body
 
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # Add the modified file to the staging area
-          git add release_notes.md
-
-          # Commit the changes locally
-          git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
-
-          # Pull the latest changes from the remote and rebase your local commits on top
-          # This integrates remote changes before pushing your new commit
-          git pull --rebase origin ${{ github.event.pull_request.base.ref }}
-
-          # Push to the base branch of the pull request
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit and push changes
+        if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
+        run: |
+          # Configure Git user name and email for the commit
+          git config user.name "GitHub Actions [Bot]" 
+          git config user.email "github-actions[bot]@users.noreply.github.com" 
+      
+          # Stage the changes to release_notes.md
+          git add release_notes.md 
+      
+          # Commit the changes
+          git commit -m "Docs: Update release notes [skip ci]" 
+      
+          # Push the changes to the main branch
+          git push origin main
 
       - name: Log "Not adding to release notes"
         if: steps.check_checkbox.outputs.add_to_release_notes == 'false'
