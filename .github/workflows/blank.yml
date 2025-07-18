@@ -58,18 +58,35 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          git checkout origin ${{ github.event.pull_request.base.ref }}
+          # Append the new release note entry to release_notes.md
+          echo "$RELEASE_NOTE_ENTRY" >> release_notes.md
 
-          # Pull the latest changes from the remote and rebase your local commits on top
-          git pull --rebase origin ${{ github.event.pull_request.base.ref }}
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Add the modified file to the staging area
+          # Explicitly checkout the target branch (e.g., 'main')
+          # This ensures we're on the correct branch before pulling/pushing.
+          # The actions/checkout@v4 might leave us in a detached HEAD state depending on the trigger.
+          git checkout ${{ github.event.pull_request.base.ref }}
+
+          # Configure Git to rebase by default for pull operations
+          # This helps avoid the "divergent branches" error.
+          git config --global pull.rebase true
+
+          # Pull the latest changes from the remote before committing.
+          # This ensures our local environment has the most up-to-date
+          # release_notes.md and helps prevent push rejections.
+          # It's crucial for avoiding conflicts.
+          git pull origin ${{ github.event.pull_request.base.ref }}
+
+          # Add only the modified release_notes.md file to the staging area
           git add release_notes.md
-
-          # Commit the changes locally
-          git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
-
-          # Push to the base branch of the pull request
+          
+          # Commit the changes locally. The -m flag provides the commit message.
+          git commit -m "docs: Update release notes for PR #${{ github.event.pull_request.number }}"
+          
+          # Push the changes to the base branch.
+          # HEAD:target_branch tells Git to push the commit at HEAD to the specified branch.
           git push origin HEAD:${{ github.event.pull_request.base.ref }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
