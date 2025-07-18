@@ -64,10 +64,12 @@ jobs:
           # Commit the changes locally
           git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
 
+          # Explicitly set the default pull behavior to rebase
+          # This should prevent the "Need to specify how to reconcile divergent branches" error
+          git config --global pull.rebase true
+
           # Pull the latest changes from the remote and rebase your local commits on top
-          # This integrates remote changes before pushing your new commit
-          # Specify the rebase strategy explicitly
-          git pull --rebase origin ${{ github.event.pull_request.base.ref }}
+          git pull origin ${{ github.event.pull_request.base.ref }}
 
           # Push to the base branch of the pull request
           git push origin HEAD:${{ github.event.pull_request.base.ref }}
