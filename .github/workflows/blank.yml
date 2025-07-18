@@ -58,20 +58,31 @@ jobs:
       - name: Commit and push changes
         if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
         run: |
-          # Configure Git user name and email for the commit
-          git config user.name "GitHub Actions [Bot]" 
+          git config user.name "GitHub Actions [Bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+          # Create a temporary branch
+          TEMP_BRANCH="release-notes-update-${{ github.run_id }}"
+          git checkout -b "$TEMP_BRANCH"
+      
+          git add release_notes.md
+          git commit -m "docs: Add PR ${{ github.event.pull_request.number }} to release notes"
+      
+          git push origin "$TEMP_BRANCH"
+          # git push origin HEAD:${{ github.event.pull_request.base.ref }}
+      
+      - name: Merge to main branch
+        if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
+        run: |
+            git checkout main
+            git merge "$TEMP_BRANCH"
+            git push origin main
 
-           git pull origin HEAD:${{ github.event.pull_request.base.ref }}
-      
-          # Stage the changes to release_notes.md
-          git add release_notes.md 
-      
-          # Commit the changes
-          git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
-      
-          # Push the changes to the main branch
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+      - name: Delete temporary branch
+        if: success() && steps.check_checkbox.outputs.add_to_release_notes == 'true' # Only delete if previous steps succeeded
+        run: |
+          git push origin --delete "$TEMP_BRANCH" # Delete remote branch
+          git branch -d "$TEMP_BRANCH" # Delete local branch
 
       - name: Log "Not adding to release notes"
         if: steps.check_checkbox.outputs.add_to_release_notes == 'false'
