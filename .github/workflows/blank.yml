@@ -66,10 +66,10 @@ jobs:
           git add release_notes.md 
       
           # Commit the changes
-          git commit -m "Docs: Update release notes [skip ci]" 
+          git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
       
           # Push the changes to the main branch
-          git push origin main
+          git push origin HEAD:${{ github.event.pull_request.base.ref }}
 
       - name: Log "Not adding to release notes"
         if: steps.check_checkbox.outputs.add_to_release_notes == 'false'
