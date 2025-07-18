@@ -61,7 +61,7 @@ jobs:
           git checkout origin ${{ github.event.pull_request.base.ref }}
 
           # Pull the latest changes from the remote and rebase your local commits on top
-          git pull ${{ github.event.pull_request.base.ref }}
+          git pull --rebase origin ${{ github.event.pull_request.base.ref }}
           
           # Add the modified file to the staging area
           git add release_notes.md
