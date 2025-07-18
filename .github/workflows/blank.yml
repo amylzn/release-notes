@@ -29,9 +29,9 @@ jobs:
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
           if [[ "$PR_BODY" =~ "- [x] Add to release notes" ]]; then
-            echo "::set-output name=add_to_release_notes::true"
+            echo "add_to_release_notes=true" >> $GITHUB_OUTPUT # Set output using GITHUB_OUTPUT
           else
-            echo "::set-output name=add_to_release_notes::false"
+            echo "add_to_release_notes=false" >> $GITHUB_OUTPUT # Set output using GITHUB_OUTPUT
           fi
         shell: bash
 
