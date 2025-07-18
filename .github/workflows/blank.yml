@@ -21,14 +21,29 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Check for "Add to release notes" checkbox
+        id: check_checkbox
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          PR_BODY="${{ github.event.pull_request.body }}"
+          if [[ "$PR_BODY" =~ "- [x] Add to release notes" ]]; then
+            echo "::set-output name=add_to_release_notes::true"
+          else
+            echo "::set-output name=add_to_release_notes::false"
+          fi
+        shell: bash
+
+      - name: Append PR title to release_notes.md
+        if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "- $PR_TITLE" >> release_notes.md
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add release_notes.md
+          git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
