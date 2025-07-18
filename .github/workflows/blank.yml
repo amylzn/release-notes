@@ -5,11 +5,16 @@ name: Release Notes
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
+  pull_request:
+    types:
+      - opened
+      - synchronize # testing
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -28,6 +33,7 @@ jobs:
         id: check_checkbox
         run: |
           PR_BODY="${{ github.event.pull_request.body }}"
+          echo "DEBUG: PR Body content: $PR_BODY"
           if [[ "$PR_BODY" =~ "- [x] Add to release notes" ]]; then
             echo "add_to_release_notes=true" >> $GITHUB_OUTPUT # Set output using GITHUB_OUTPUT
           else
@@ -38,12 +44,36 @@ jobs:
       - name: Append PR title to release_notes.md
         if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
         run: |
+          echo "Value of add_to_release_notes: ${{ steps.check_checkbox.outputs.add_to_release_notes }}"
           PR_TITLE="${{ github.event.pull_request.title }}"
-          echo "- $PR_TITLE" >> release_notes.md
+          PR_BODY="${{ github.event.pull_request.body }}"
+          TODAY_DATE=$(date +'%Y-%m-%d') # Get today's date in YYYY-MM-DD format
+
+          echo "# Release on $TODAY_DATE" >> release_notes.md
+          echo "## PR: $PR_TITLE" >> release_notes.md
+          echo "" >> release_notes.md # Add an empty line for spacing
+          echo "$PR_BODY" >> release_notes.md
+          echo "" >> release_notes.md # Add an empty line after the PR body
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add the modified file to the staging area
           git add release_notes.md
+
+          # Commit the changes locally
           git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
-          git push
+
+          # Pull the latest changes from the remote and rebase your local commits on top
+          # This integrates remote changes before pushing your new commit
+          git pull --rebase origin ${{ github.event.pull_request.base.ref }}
+
+          # Push to the base branch of the pull request
+          git push origin HEAD:${{ github.event.pull_request.base.ref }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log "Not adding to release notes"
+        if: steps.check_checkbox.outputs.add_to_release_notes == 'false'
+        run: | 
+          echo "Not adding to release notes: Checkbox not found or not checked."
