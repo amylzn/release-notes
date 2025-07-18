@@ -38,6 +38,7 @@ jobs:
       - name: Append PR title to release_notes.md
         if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
         run: |
+          echo "Value of add_to_release_notes: ${{ steps.check_checkbox.outputs.add_to_release_notes }}" # This line will show in the logs
           PR_TITLE="${{ github.event.pull_request.title }}"
           echo "- $PR_TITLE" >> release_notes.md
           git config --global user.name "github-actions[bot]"
