@@ -48,3 +48,7 @@ jobs:
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log "Not adding to release notes"
+        if: steps.check_checkbox.outputs.add_to_release_notes == 'false'
+        run: echo "Not adding to release notes: Checkbox not found or not checked."
