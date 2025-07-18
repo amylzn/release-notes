@@ -41,43 +41,28 @@ jobs:
           fi
         shell: bash
 
-      - name: Append PR title to release_notes.md
-        if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
-        run: |
-          echo "Value of add_to_release_notes: ${{ steps.check_checkbox.outputs.add_to_release_notes }}"
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_BODY="${{ github.event.pull_request.body }}"
-          TODAY_DATE=$(date +'%Y-%m-%d') # Get today's date in YYYY-MM-DD format
-
-          echo "# Release on $TODAY_DATE" >> release_notes.md
-          echo "## PR: $PR_TITLE" >> release_notes.md
-          echo "" >> release_notes.md # Add an empty line for spacing
-          echo "$PR_BODY" >> release_notes.md
-          echo "" >> release_notes.md # Add an empty line after the PR body
-
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Append the new release note entry to release_notes.md
+      # Append the new release note entry to release_notes.md
           echo "$RELEASE_NOTE_ENTRY" >> release_notes.md
 
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Explicitly checkout the target branch (e.g., 'main')
-          # This ensures we're on the correct branch before pulling/pushing.
-          # The actions/checkout@v4 might leave us in a detached HEAD state depending on the trigger.
-          git checkout ${{ github.event.pull_request.base.ref }}
+          # Ensure a local 'main' branch exists and is tracking 'origin/main'
+          # If the branch doesn't exist or is not tracking origin, create it and set it up.
+          if [[ $(git rev-parse --symbolic-full-name --abbrev-ref HEAD) != "main" ]]; then
+            echo "Local 'main' branch is not active, creating and tracking it."
+            git checkout --track origin/main
+          fi
 
           # Configure Git to rebase by default for pull operations
-          # This helps avoid the "divergent branches" error.
+          # This should prevent the "fatal: Need to specify how to reconcile divergent branches" error.
           git config --global pull.rebase true
-
+          
           # Pull the latest changes from the remote before committing.
           # This ensures our local environment has the most up-to-date
           # release_notes.md and helps prevent push rejections.
           # It's crucial for avoiding conflicts.
-          git pull origin ${{ github.event.pull_request.base.ref }}
+          git pull origin main
 
           # Add only the modified release_notes.md file to the staging area
           git add release_notes.md
@@ -87,7 +72,7 @@ jobs:
           
           # Push the changes to the base branch.
           # HEAD:target_branch tells Git to push the commit at HEAD to the specified branch.
-          git push origin HEAD:${{ github.event.pull_request.base.ref }}
+          git push origin HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
