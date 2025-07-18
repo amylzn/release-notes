@@ -43,13 +43,24 @@ jobs:
       - name: Append PR title to release_notes.md
         if: steps.check_checkbox.outputs.add_to_release_notes == 'true'
         run: |
-          echo "Value of add_to_release_notes: ${{ steps.check_checkbox.outputs.add_to_release_notes }}" # This line will show in the logs
+          echo "Value of add_to_release_notes: ${{ steps.check_checkbox.outputs.add_to_release_notes }}"
           PR_TITLE="${{ github.event.pull_request.title }}"
           echo "- $PR_TITLE" >> release_notes.md
+
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Add the modified file to the staging area
           git add release_notes.md
+
+          # Commit the changes locally
           git commit -m "docs: Add PR #${{ github.event.pull_request.number }} to release notes"
+
+          # Pull the latest changes from the remote and rebase your local commits on top
+          # This integrates remote changes before pushing your new commit
+          git pull --rebase origin ${{ github.event.pull_request.base.ref }}
+
+          # Push to the base branch of the pull request
           git push origin HEAD:${{ github.event.pull_request.base.ref }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
