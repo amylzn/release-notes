@@ -51,4 +51,5 @@ jobs:
 
       - name: Log "Not adding to release notes"
         if: steps.check_checkbox.outputs.add_to_release_notes == 'false'
-        run: echo "Not adding to release notes: Checkbox not found or not checked."
+        run: | 
+          echo "Not adding to release notes: Checkbox not found or not checked."
