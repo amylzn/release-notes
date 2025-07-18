@@ -8,6 +8,7 @@ on:
   pull_request:
     types:
       - opened
+      - synchronize # testing
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -45,7 +46,14 @@ jobs:
         run: |
           echo "Value of add_to_release_notes: ${{ steps.check_checkbox.outputs.add_to_release_notes }}"
           PR_TITLE="${{ github.event.pull_request.title }}"
-          echo "- $PR_TITLE" >> release_notes.md
+          PR_BODY="${{ github.event.pull_request.body }}"
+          TODAY_DATE=$(date +'%Y-%m-%d') # Get today's date in YYYY-MM-DD format
+
+          echo "# Release on $TODAY_DATE" >> release_notes.md
+          echo "## PR: $PR_TITLE" >> release_notes.md
+          echo "" >> release_notes.md # Add an empty line for spacing
+          echo "$PR_BODY" >> release_notes.md
+          echo "" >> release_notes.md # Add an empty line after the PR body
 
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
